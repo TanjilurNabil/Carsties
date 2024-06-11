@@ -1,0 +1,27 @@
+#Working solution from internet
+# version: "3.9"
+# services:
+#   postgres:
+#     image: postgres:14-alpine
+#     ports: 
+#       - 5432:5432
+#     volumes:
+#       - ~/apps/postgres:/var/lib/postgresql/data
+#     environment:
+#       - POSTGRES_PASSWORD=postgrespw
+#       - POSTGRES_USER=postgres
+#       - POSTGRES_DB=auctions
+
+#From tutorial author
+
+services:
+  postgres:
+    image: postgres
+    ports:
+      - 5432:5432
+    environment:
+      - POSTGRES_PASSWORD=postgrespw
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+volumes:
+  pgdata:
