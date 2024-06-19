@@ -2,6 +2,7 @@
 using AuctionService.DTOs;
 using AuctionService.Entities;
 using AutoMapper;
+using AutoMapper.QueryableExtensions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -22,13 +23,24 @@ namespace AuctionService.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<List<AuctionDto>>> GetAllAuction()
+        public async Task<ActionResult<List<AuctionDto>>> GetAllAuction(string date)
         {
-            var auctions = await _context.Auctions
-                .Include(x => x.Item)
-                .OrderBy(x => x.Item.Make)
-                .ToListAsync();
-            return _mapper.Map<List<AuctionDto>>(auctions);
+            var query = _context.Auctions.OrderBy(x=>x.Item.Make).AsQueryable();
+            //Modified during implementing sychronous communication between search and auction
+
+            if (!string.IsNullOrEmpty(date))
+            {
+                //Returning the auctions which are greater that the given date
+                query = query.Where(x => x.UpdatedAt.CompareTo(DateTime.Parse(date).ToUniversalTime()) > 0);
+            }
+            //Project to used for to project queryable data ConfigurationProvider get the mapping profile
+            return await query.ProjectTo<AuctionDto>(_mapper.ConfigurationProvider).ToListAsync();
+            //Primary use 
+            //var auctions = await _context.Auctions
+            //    .Include(x => x.Item)
+            //    .OrderBy(x => x.Item.Make)
+            //    .ToListAsync();
+            //return _mapper.Map<List<AuctionDto>>(auctions);
 
         }
         [HttpGet("{id}")]
