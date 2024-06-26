@@ -34,6 +34,12 @@ services:
     volumes:
       - /var/lib/mongodb/data # removed the named volume just using the filesystem
       #- mongodata:/var/lib/mongodb/data
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    ports:
+      - 5672:5672
+      - 15672:15672
 # volumes:
 #     pgdata:
 #     mongodata:
+    

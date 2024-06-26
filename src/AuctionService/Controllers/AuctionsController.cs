@@ -3,6 +3,8 @@ using AuctionService.DTOs;
 using AuctionService.Entities;
 using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using Contracts;
+using MassTransit;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -15,11 +17,13 @@ namespace AuctionService.Controllers
     {
         private readonly AuctionDbContext _context;
         private readonly IMapper _mapper;
+        private readonly IPublishEndpoint _publishEndpoint;
 
-        public AuctionsController(AuctionDbContext context, IMapper mapper)
+        public AuctionsController(AuctionDbContext context, IMapper mapper, IPublishEndpoint publishEndpoint)
         {
             _context = context;
             _mapper = mapper;
+            _publishEndpoint = publishEndpoint;
         }
 
         [HttpGet]
@@ -63,13 +67,18 @@ namespace AuctionService.Controllers
             auction.Seller = "test";
 
             _context.Auctions.Add(auction);
+            var newAuction = _mapper.Map<AuctionDto>(auction);
+            //Publish to RabbitMq with MassTransit
+            await _publishEndpoint.Publish(_mapper.Map<AuctionCreated>(newAuction));
+
             var result = await _context.SaveChangesAsync() > 0;
+
             if (!result) return BadRequest("Could not save changes to DB");
             //We want to show user that where the auction is created, so with the nameof keyword we are navigating the user to the 
             //action written above so that he can locate the created auction.
             //As GetAuctionById need id as parmeter it is passed with new {}
             //and then mapped the response.
-            return CreatedAtAction(nameof(GetAuctionById),new { auction.Id},_mapper.Map<AuctionDto>(auction));
+            return CreatedAtAction(nameof(GetAuctionById),new { auction.Id},newAuction);
         }
         [HttpPut("{id}")]
         public async Task<ActionResult> UpdateAuction([FromRoute]Guid id, [FromBody] UpdateAuctionDto updateAuction)
