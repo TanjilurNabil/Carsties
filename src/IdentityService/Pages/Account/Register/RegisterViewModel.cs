@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
 
 namespace IdentityService.Pages.Account.Register
 {
@@ -11,6 +12,7 @@ namespace IdentityService.Pages.Account.Register
         [Required]
         public string Email { get; set; }
         [Required]
+        
         public string Fullname { get; set; }
         public string ReturnUrl { get; set; }
         public string Button { get; set; }
