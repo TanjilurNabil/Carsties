@@ -5,6 +5,7 @@ using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using Contracts;
 using MassTransit;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -59,12 +60,14 @@ namespace AuctionService.Controllers
             return _mapper.Map<AuctionDto>(auction);
 
         }
+
+        [Authorize]
         [HttpPost]
         public async Task<ActionResult<AuctionDto>> CreateAuction(CreateAuctionDto createAuction)
         {
             var auction = _mapper.Map<Auction>(createAuction);
             //TODO: add current user as seller
-            auction.Seller = "test";
+            auction.Seller = User.Identity.Name;
 
             _context.Auctions.Add(auction);
             var newAuction = _mapper.Map<AuctionDto>(auction);
@@ -80,12 +83,16 @@ namespace AuctionService.Controllers
             //and then mapped the response.
             return CreatedAtAction(nameof(GetAuctionById),new { auction.Id},newAuction);
         }
+        [Authorize]
         [HttpPut("{id}")]
         public async Task<ActionResult> UpdateAuction([FromRoute]Guid id, [FromBody] UpdateAuctionDto updateAuction)
         {
             var auction = await _context.Auctions.Include(x => x.Item).FirstOrDefaultAsync(x => x.Id == id);
             if(auction == null) return NotFound();
-            //Todo: check seller == username
+            // check seller == username
+            if (auction.Seller != User.Identity.Name) return Forbid();
+
+
             auction.Item.Make = updateAuction.Make??auction.Item.Make;
             auction.Item.Model = updateAuction.Model??auction.Item.Model;
             auction.Item.Color = updateAuction.Color??auction.Item.Color;
@@ -98,12 +105,17 @@ namespace AuctionService.Controllers
             if (result) return Ok();
             return BadRequest("Problem saving changes");
         }
+
+        [Authorize]
         [HttpDelete("{id}")]
         public async Task<ActionResult> DeleteAuction([FromRoute] Guid id)
         {
             var auction = await _context.Auctions.FindAsync(id);
             if (auction == null) return NotFound();
-            //TODO: check seller == username
+            //check seller == username
+            if(auction.Seller!=User.Identity.Name) return Forbid();
+
+
             _context.Auctions.Remove(auction);
 
             await _publishEndpoint.Publish<AuctionDeleted>(new {Id = auction.Id.ToString()});
