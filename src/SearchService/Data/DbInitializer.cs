@@ -1,5 +1,6 @@
 ﻿using MongoDB.Driver;
 using MongoDB.Entities;
+using Polly;
 using SearchService.Models;
 using SearchService.Services;
 using System.Text.Json;
@@ -9,6 +10,29 @@ namespace SearchService.Data
     {
         public static async Task InitDb(WebApplication app)
         {
+            //Used retry as Mongo was not getting connected
+            //var retryPolicy = Policy
+            //    .Handle<MongoConnectionException>()
+            //    .Or<TimeoutException>()
+            //    .WaitAndRetryAsync(
+            //    retryCount: 5,
+            //    sleepDurationProvider: attempt => TimeSpan.FromSeconds(5),
+            //    onRetry: (exception, sleepDuration, attempt, context) =>
+            //    {
+            //        Console.WriteLine($"Retry {attempt} of MongoDB connection after exception: {exception.Message}");
+            //    });
+            //await retryPolicy.ExecuteAsync(async () =>
+            //{
+            //    await DB.InitAsync("SearchDb", MongoClientSettings
+            //        .FromConnectionString(app.Configuration.GetConnectionString("MongoDbConnection")));
+
+            //    await DB.Index<Item>()
+            //        .Key(x => x.Make, KeyType.Text)
+            //        .Key(x => x.Model, KeyType.Text)
+            //        .Key(x => x.Color, KeyType.Text)
+            //        .CreateAsync();
+            //});
+
             await DB.InitAsync("SearchDb", MongoClientSettings
                     .FromConnectionString(app.Configuration.GetConnectionString("MongoDbConnection")));
 

@@ -21,6 +21,12 @@ builder.Services.AddMassTransit(x =>
     x.SetEndpointNameFormatter(new KebabCaseEndpointNameFormatter("search", false));
     x.UsingRabbitMq((context, cfg) =>
     {
+        //This is for dockerise and find service when running as container
+        cfg.Host(builder.Configuration["RabbitMq:Host"], "/", host =>
+        {
+            host.Username(builder.Configuration.GetValue("RabbitMq:Username", "guest"));
+            host.Password(builder.Configuration.GetValue("RabbitMq:Password", "guest"));
+        });
         //If mongoDb is down this will keep retrying to save the data from message queue for 5 times with 5 second interval before finally giving up 
         cfg.ReceiveEndpoint("search-auction-created", e =>
         {
@@ -31,6 +37,7 @@ builder.Services.AddMassTransit(x =>
         cfg.ConfigureEndpoints(context);
     });
 });
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
